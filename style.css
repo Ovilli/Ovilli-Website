@@ -1,86 +1,88 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    background: #fefaf0;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding-bottom: 80px;
-}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#fefaf0; font-family:Arial,sans-serif; min-height:100vh; }
 
 .icon-text-row {
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    display:flex; align-items:center; gap:1.5rem; z-index:50;
+    transition: transform 0.5s ease;
+}
+.icon-text-row.left { transform:translate(-450px,-50%); }
+
+.olive-icon { width:min(30vw,200px); max-width:200px; transition:transform 0.2s ease; }
+.olive-icon:hover { transform:scale(1.05); }
+.olive-icon img { width:100%; height:auto; display:block; }
+.olive-icon::selection { background:#C7CC62; color:#3E721D; }
+
+.olive-text { font-size:5vw; color:#909B50; white-space:nowrap; transition: transform 0.2s ease; }
+.olive-text:hover { transform:scale(1.2); }
+.olive-text::selection { background:#C7CC62; color:#3E721D; }
+
+.language-btn { position:fixed; top:1rem; right:1rem; z-index:150; }
+.language-btn button { background:#909B50; color:white; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; transition: all 0.2s ease; font-weight:500; font-size:0.9rem; }
+.language-btn button:hover {transform:scale(1.05); }
+
+#about-nav { position:fixed; top:50%; left:1rem; transform:translateY(-50%); display:flex; flex-direction:column; gap:0.5rem; z-index:100; opacity:0; transition: opacity 0.5s ease; }
+#about-nav.visible { opacity:1; }
+#about-nav .nav-brand { font-size:0.7rem; color:#909B50; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:0.5rem; font-weight:500; }
+#about-nav a.nav-pill { display:block; font-size:0.82rem; color:#909B50; text-decoration:none; padding:0.25rem 0.75rem; border-left:2px solid transparent; white-space:nowrap; transition:border-color 0.2s,color 0.2s; }
+#about-nav a.nav-pill:hover, #about-nav a.nav-pill.active { border-left-color:#909B50; color:#3E721D; }
+
+.about-content { margin-left:calc(50% + 120px); max-width:520px; width:100%; padding:2rem; }
+
+.about-section { min-height:60vh; display:flex; flex-direction:column; justify-content:center; padding:2rem; border-radius:12px; background:white; box-shadow:0 4px 12px rgba(0,0,0,0.1); border-bottom:1px solid #e8e2cf; opacity:0; transform:translateY(50px); transition:opacity 0.6s ease, transform 0.6s ease; }
+.about-section.visible { opacity:1; transform:translateY(0); }
+.about-section:last-child { border-bottom:none; }
+.about-section h4 { font-size:0.75rem; letter-spacing:0.14em; text-transform:uppercase; color:#909B50; margin-bottom:1rem; font-weight:500; }
+.about-section p { font-size:1rem; line-height:1.75; color:#5a5a3a; }
+
+.socials { margin-top:1rem; display:flex; gap:0.5rem; }
+.social-icon { font-size:1.5rem; color:black; text-decoration:none; transition: transform 0.2s; }
+.social-icon:hover { transform:scale(1.1); }
+
+.olive-footer-ewww-feet { position:fixed; left:0; bottom:0; width:100%; background:#909B50; color:white; display:flex; justify-content:space-between; align-items:center; padding:0.75rem 2rem; font-size:0.9rem; z-index:200; }
+.footer-icon { color:white; font-size:1.6rem; text-decoration:none; transition:transform 0.2s; }
+.footer-icon:hover { transform:scale(1.1); }
+
+/* Zentrierung für die 404-Seite */
+.error-page .about-content {
+    margin-left: auto;
+    margin-right: auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-    margin-bottom: 2rem;
+    min-height: 100vh; /* Nutzt die volle Höhe zum Zentrieren */
 }
 
-.olive-icon {
-    width: min(30vw, 200px);
-    max-width: 200px;
-    transition: transform 0.2s ease;
-}
-
-.olive-icon:hover {
-    transform: scale(1.02);
-}
-
-.olive-icon img {
-    width: 100%;
-    height: auto;
-    display: block;
-}
-
-.olive-text {
-    font-size: 5vw;
-    transition: transform 0.2s ease;
-    color: #909B50;
-    white-space: nowrap;
-}
-
-.olive-text:hover {
-    transform: scale(1.2);
-}
-
-.olive-text::selection {
-    background: #C7CC62;
-    color: #3E721D;
-}
-
-.olive-footer-ewww-feet {
-    position: fixed;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    background-color: #909B50;
+/* Styling für den "Back to Home" Button, passend zu deinem Style */
+.back-home-wrapper button {
+    background: #909B50;
     color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 2rem;
-    font-size: 0.9rem;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
 }
 
-.footer-text {
-    text-align: left;
+.back-home-wrapper button:hover {
+    transform: scale(1.05);
+    background: #3E721D;
 }
 
-.footer-icon {
-    color: white;
-    font-size: 1.6rem;
-    transition: transform 0.2s, color 0.2s;
-    text-decoration: none;
+/* Falls das Logo auf der 404 Seite oben links fixiert sein soll: */
+.error-page .icon-text-row {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    transform: none;
+    gap: 1rem;
 }
 
-.footer-icon:hover {
-    color: #e0e0e0;
-    transform: scale(1.1);
+.error-page .olive-icon {
+    width: 60px; /* Kleineres Logo für die Fehlerseite */
+}
+
+.error-page .olive-text {
+    font-size: 1.5rem;
 }
