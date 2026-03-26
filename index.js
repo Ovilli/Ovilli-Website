@@ -5,11 +5,11 @@ const langButton = document.getElementById('lang-toggle');
 
 let currentLang = 'EN';
 let isVerified = false;
+let turnstileWidgetId = null;
 
 const WORKER_URL = "https://ovilli-captcha.mzlatin4.workers.dev/";
 
 document.body.classList.add("locked");
-
 
 const translations = {
     EN: {
@@ -78,26 +78,29 @@ function render() {
     `).join('');
 
     setupObserver();
-
-    setTimeout(loadTurnstile, 50);
+    setTimeout(loadTurnstile, 80);
 }
 
 function loadTurnstile() {
-    if (!window.turnstile) return;
+    if (!window.turnstile || isVerified) return;
 
     const box = document.getElementById("turnstile-box");
     if (!box) return;
 
     box.innerHTML = "";
 
-    turnstile.render("#turnstile-box", {
+    turnstileWidgetId = turnstile.render("#turnstile-box", {
         sitekey: "0x4AAAAAACwW_d7_86SOKI22",
         callback: onTurnstileSuccess
     });
 }
 
+let requestInProgress = false;
 
 function onTurnstileSuccess(token) {
+    if (requestInProgress || isVerified) return;
+    requestInProgress = true;
+
     fetch(WORKER_URL, {
         method: "POST",
         headers: {
@@ -105,7 +108,10 @@ function onTurnstileSuccess(token) {
         },
         body: JSON.stringify({ token })
     })
-        .then(res => res.json())
+        .then(async (res) => {
+            if (!res.ok) throw new Error("HTTP error");
+            return res.json();
+        })
         .then(data => {
             if (data.success) {
                 unlockSite();
@@ -114,19 +120,21 @@ function onTurnstileSuccess(token) {
                 updateStatus("Failed");
             }
         })
-        .catch(() => updateStatus("Error"));
+        .catch(() => {
+            updateStatus("Error (CORS or Worker issue)");
+        })
+        .finally(() => {
+            requestInProgress = false;
+        });
 }
-
 
 function unlockSite() {
     isVerified = true;
-
     document.body.classList.remove("locked");
 
     const gate = document.getElementById("gate");
     if (gate) gate.style.display = "none";
 }
-
 
 function updateStatus(text) {
     const el = document.getElementById("verify-status");
@@ -155,7 +163,6 @@ function setupObserver() {
     sections.forEach(s => observer.observe(s));
 }
 
-
 window.addEventListener('scroll', () => {
     const scrollY = window.scrollY;
 
@@ -167,7 +174,6 @@ window.addEventListener('scroll', () => {
         nav.classList.remove('visible');
     }
 });
-
 
 langButton.addEventListener('click', () => {
     currentLang = currentLang === 'EN' ? 'DE' : 'EN';
