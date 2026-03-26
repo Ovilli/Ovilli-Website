@@ -4,12 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ovilli</title>
+
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <body>
 
-<!-- Header: Logo and Text -->
+<div id="gate">
+    <div class="gate-box">
+        <div id="turnstile-box"></div>
+    </div>
+</div>
+
 <div class="header-brand" id="main-header">
     <div class="olive-icon">
         <img src="olive-svgrepo-com.svg" alt="Olive Icon">
@@ -17,23 +24,21 @@
     <div class="olive-text">Ovilli</div>
 </div>
 
-<!-- Language Toggle -->
 <div class="language-btn">
     <button id="lang-toggle">EN / DE</button>
 </div>
 
-<!-- Navigation (Desktop Side / Mobile Top) -->
 <nav id="about-nav"></nav>
-
-<!-- Content Sections -->
 <main class="about-content"></main>
-
 
 <footer class="olive-footer">
     <div class="footer-text">Official Website of Ovilli</div>
-    <a href="https://github.com/ovilli" target="_blank" class="footer-icon"><i class="fab fa-github"></i></a>
+    <a href="https://github.com/ovilli" target="_blank" class="footer-icon">
+        <i class="fab fa-github"></i>
+    </a>
 </footer>
 
 <script src="index.js"></script>
+
 </body>
 </html>

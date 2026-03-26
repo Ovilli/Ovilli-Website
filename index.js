@@ -4,6 +4,12 @@ const content = document.querySelector('.about-content');
 const langButton = document.getElementById('lang-toggle');
 
 let currentLang = 'EN';
+let isVerified = false;
+
+const WORKER_URL = "https://ovilli-captcha.mzlatin4.workers.dev/";
+
+document.body.classList.add("locked");
+
 
 const translations = {
     EN: {
@@ -14,11 +20,11 @@ const translations = {
         music: "Music",
         contact: "Contact",
         sections: {
-            me: "Hey. I spend most of my time bouncing between code, games, and a good playlist. I like things simple, functional, and authentic. That's exactly what this site is all about.",
-            gaming: "Gaming is my reset button. I gravitate toward strong mechanics and immersive worlds — the kind of games that stick with you long after you log off.",
-            tech: "I like building things. Sometimes to solve a problem, sometimes just to see if I can pull it off. I care about clean code and practical tools.",
-            music: "There's always a soundtrack to my day. Music sets the tone whether I'm deep in a codebase or just chilling. My taste is all over the place.",
-            contact: "If something here resonates with you, feel free to reach out. I'm always up for a good chat."
+            me: "Hey. I spend most of my time bouncing between code, games, and a good playlist.",
+            gaming: "Gaming is my reset button...",
+            tech: "I like building things...",
+            music: "There's always a soundtrack...",
+            contact: "If something here resonates with you, feel free to reach out."
         }
     },
     DE: {
@@ -29,11 +35,11 @@ const translations = {
         music: "Musik",
         contact: "Kontakt",
         sections: {
-            me: "Hey. Ich verbringe die meiste Zeit irgendwo zwischen Code, Games und einer guten Playlist. Ich mag es simpel, funktional und authentisch.",
-            gaming: "Zocken ist für mich der perfekte Ausgleich. Ich stehe auf clevere Mechaniken und Welten, in denen man sich verlieren kann.",
-            tech: "Ich baue gerne Dinge. Manchmal, weil ich sie selbst brauche, und manchmal einfach, um zu sehen, ob es klappt. Mir geht es um sauberen Code.",
-            music: "Bei mir läuft eigentlich immer Musik. Sie gibt den Takt vor, egal ob ich programmiere, zocke oder einfach nur abschalte.",
-            contact: "Wenn dich hier irgendwas anspricht, meld dich einfach. Ich bin immer offen für einen Austausch."
+            me: "Hey. Ich verbringe die meiste Zeit...",
+            gaming: "Zocken ist für mich...",
+            tech: "Ich baue gerne Dinge...",
+            music: "Bei mir läuft eigentlich immer Musik...",
+            contact: "Wenn dich hier irgendwas anspricht..."
         }
     }
 };
@@ -41,41 +47,101 @@ const translations = {
 function render() {
     const t = translations[currentLang];
 
-    // Render Nav
-    nav.innerHTML = `<span class="nav-brand-label">${t.about}</span>` +
+    nav.innerHTML =
+        `<span class="nav-brand-label">${t.about}</span>` +
         Object.keys(t.sections).map(key =>
             `<a class="nav-pill" href="#${key}">${t[key]}</a>`
         ).join('');
 
-    // Render Content
     content.innerHTML = Object.entries(t.sections).map(([key, val]) => `
         <section class="about-section" id="${key}">
             <h4>${t[key]}</h4>
             <p>${val}</p>
+
             ${key === 'contact' ? `
                 <div class="socials">
-                    <a href="https://github.com/ovilli" target="_blank" class="social-icon"><i class="fab fa-github"></i></a>
-                    <a href="mailto:mzlatin4@gmail.com" class="social-icon"><i class="fas fa-envelope"></i></a>
-                </div>` : ''}
+                    <a href="https://github.com/ovilli" target="_blank" class="social-icon">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="mailto:mzlatin4@gmail.com" class="social-icon">
+                        <i class="fas fa-envelope"></i>
+                    </a>
+                </div>
+
+                <div class="turnstile-container">
+                    <div id="turnstile-box"></div>
+                </div>
+
+                <p id="verify-status">Not verified</p>
+            ` : ''}
         </section>
     `).join('');
 
     setupObserver();
+
+    setTimeout(loadTurnstile, 50);
 }
 
-// Logic to highlight nav and show sections on scroll
+function loadTurnstile() {
+    if (!window.turnstile) return;
+
+    const box = document.getElementById("turnstile-box");
+    if (!box) return;
+
+    box.innerHTML = "";
+
+    turnstile.render("#turnstile-box", {
+        sitekey: "0x4AAAAAACwW_d7_86SOKI22",
+        callback: onTurnstileSuccess
+    });
+}
+
+
+function onTurnstileSuccess(token) {
+    fetch(WORKER_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ token })
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                unlockSite();
+                updateStatus("Verified");
+            } else {
+                updateStatus("Failed");
+            }
+        })
+        .catch(() => updateStatus("Error"));
+}
+
+
+function unlockSite() {
+    isVerified = true;
+
+    document.body.classList.remove("locked");
+
+    const gate = document.getElementById("gate");
+    if (gate) gate.style.display = "none";
+}
+
+
+function updateStatus(text) {
+    const el = document.getElementById("verify-status");
+    if (el) el.textContent = text;
+}
+
 function setupObserver() {
     const sections = document.querySelectorAll('.about-section');
     const navLinks = document.querySelectorAll('.nav-pill');
-
-    const options = { threshold: 0.4, rootMargin: "0px 0px -20% 0px" };
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add('visible');
 
-                // Update active nav link
                 navLinks.forEach(link => {
                     link.classList.remove('active');
                     if (link.getAttribute('href') === `#${entry.target.id}`) {
@@ -84,12 +150,12 @@ function setupObserver() {
                 });
             }
         });
-    }, options);
+    }, { threshold: 0.4 });
 
     sections.forEach(s => observer.observe(s));
 }
 
-// Scroll Effects
+
 window.addEventListener('scroll', () => {
     const scrollY = window.scrollY;
 
@@ -102,11 +168,10 @@ window.addEventListener('scroll', () => {
     }
 });
 
-// Language Toggle
+
 langButton.addEventListener('click', () => {
     currentLang = currentLang === 'EN' ? 'DE' : 'EN';
     render();
 });
 
-// Initial Init
 render();

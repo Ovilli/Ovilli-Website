@@ -248,4 +248,21 @@ body {
         padding: 1.5rem;
     }
 }
+#gate {
+    position: fixed;
+    inset: 0;
+    background: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+}
 
+.gate-box {
+    text-align: center;
+    color: white;
+}
+
+body.locked {
+    overflow: hidden;
+}
