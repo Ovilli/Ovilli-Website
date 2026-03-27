@@ -63,7 +63,7 @@ function render() {
                     <a href="https://github.com/ovilli" target="_blank" class="social-icon">
                         <i class="fab fa-github"></i>
                     </a>
-                    <a href="mailto:mzlatin4@gmail.com" class="social-icon">
+                    <a href="mailto:ovilli@ovilli.de" class="social-icon">
                         <i class="fas fa-envelope"></i>
                     </a>
                 </div>
