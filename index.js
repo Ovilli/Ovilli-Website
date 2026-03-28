@@ -5,7 +5,6 @@ const langButton = document.getElementById('lang-toggle');
 
 let currentLang = 'EN';
 let isVerified = false;
-let turnstileWidgetId = null;
 
 const WORKER_URL = "https://ovilli-captcha.mzlatin4.workers.dev/";
 
@@ -67,29 +66,27 @@ function render() {
                         <i class="fas fa-envelope"></i>
                     </a>
                 </div>
-
-                <div class="turnstile-container">
-                    <div id="turnstile-box"></div>
-                </div>
-
-                <p id="verify-status">Not verified</p>
             ` : ''}
         </section>
     `).join('');
 
     setupObserver();
-    setTimeout(loadTurnstile, 80);
 }
 
 function loadTurnstile() {
-    if (!window.turnstile || isVerified) return;
+    if (isVerified) return;
+
+    if (!window.turnstile) {
+        setTimeout(loadTurnstile, 100);
+        return;
+    }
 
     const box = document.getElementById("turnstile-box");
     if (!box) return;
 
     box.innerHTML = "";
 
-    turnstileWidgetId = turnstile.render("#turnstile-box", {
+    turnstile.render("#turnstile-box", {
         sitekey: "0x4AAAAAACwW_d7_86SOKI22",
         callback: onTurnstileSuccess
     });
@@ -115,13 +112,12 @@ function onTurnstileSuccess(token) {
         .then(data => {
             if (data.success) {
                 unlockSite();
-                updateStatus("Verified");
             } else {
-                updateStatus("Failed");
+                resetTurnstile();
             }
         })
         .catch(() => {
-            updateStatus("Error (CORS or Worker issue)");
+            resetTurnstile();
         })
         .finally(() => {
             requestInProgress = false;
@@ -136,9 +132,10 @@ function unlockSite() {
     if (gate) gate.style.display = "none";
 }
 
-function updateStatus(text) {
-    const el = document.getElementById("verify-status");
-    if (el) el.textContent = text;
+function resetTurnstile() {
+    if (window.turnstile) {
+        turnstile.reset("#turnstile-box");
+    }
 }
 
 function setupObserver() {
@@ -181,3 +178,4 @@ langButton.addEventListener('click', () => {
 });
 
 render();
+loadTurnstile();
