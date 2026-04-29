@@ -6,7 +6,6 @@ const scrollProgress = document.getElementById("scroll-progress");
 const heroSection = document.querySelector(".hero");
 const backToTopButton = document.getElementById("back-to-top");
 const olivePageLink = document.getElementById("olive-page-link");
-// const branchOverlay = document.getElementById("branch-overlay");
 
 const heroEyebrow = document.getElementById("hero-eyebrow");
 const heroTitle = document.getElementById("hero-title");
@@ -21,23 +20,21 @@ const footerText = document.getElementById("footer-text");
 
 const gateTitle = document.getElementById("gate-title");
 const gateCopy = document.getElementById("gate-copy");
-
-// const tendrilCanvas = document.getElementById("tendril-canvas");
-const tendrilCtx = typeof tendrilCanvas !== 'undefined' && tendrilCanvas ? tendrilCanvas.getContext("2d") : null;
+const gateError = document.getElementById("gate-error");
 
 let currentLang = "EN";
 let isVerified = false;
 let requestInProgress = false;
 let observer = null;
+let visibilityObserver = null;
 let turnstileWidgetId = null;
-let tendrilState = null;
 let lastScrollY = window.scrollY;
 let scrollThreshold = 40;
 let accumulatedScroll = 0;
+let scrollTicking = false;
 
 const WORKER_URL = "https://ovilli-captcha.mzlatin4.workers.dev/";
 const TURNSTILE_SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-const REDUCED_MOTION_QUERY = window.matchMedia("(prefers-reduced-motion: reduce)");
 const DEV_MODE = (
     ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) ||
     window.location.search.includes("dev=1")
@@ -46,6 +43,11 @@ const DEV_MODE = (
 if (!DEV_MODE) {
     document.body.classList.add("locked");
 }
+
+const SVG = {
+    github: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`,
+    envelope: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 16" width="18" height="14" fill="currentColor" aria-hidden="true"><path d="M18 0H2C.9 0 0 .9 0 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V2l8 5 8-5v2z"/></svg>`,
+};
 
 const translations = {
     EN: {
@@ -208,10 +210,10 @@ function render() {
         const socialHtml = section.id === "contact"
             ? `<div class="socials">
                     <a href="https://github.com/ovilli" target="_blank" rel="noreferrer" class="social-icon" aria-label="GitHub">
-                        <i class="fab fa-github"></i>
+                        ${SVG.github}
                     </a>
                     <a href="mailto:ovilli@ovilli.de" class="social-icon" aria-label="Email">
-                        <i class="fas fa-envelope"></i>
+                        ${SVG.envelope}
                     </a>
                </div>`
             : "";
@@ -228,28 +230,37 @@ function render() {
 }
 
 function setupObserver() {
-    const sections = document.querySelectorAll(".about-section");
-    const navLinks = document.querySelectorAll(".nav-pill");
-
     if (observer) {
         observer.disconnect();
     }
+    if (visibilityObserver) {
+        visibilityObserver.disconnect();
+    }
+
+    const sections = document.querySelectorAll(".about-section");
+
+    visibilityObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add("visible");
+                visibilityObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.12 });
 
     observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
-            if (!entry.isIntersecting) {
-                return;
+            const link = nav.querySelector(`[href="#${entry.target.id}"]`);
+            if (link) {
+                link.classList.toggle("active", entry.isIntersecting);
             }
-
-            entry.target.classList.add("visible");
-            navLinks.forEach((link) => {
-                const isCurrent = link.getAttribute("href") === `#${entry.target.id}`;
-                link.classList.toggle("active", isCurrent);
-            });
         });
-    }, { threshold: 0.25 });
+    }, { rootMargin: "-25% 0px -65% 0px", threshold: 0 });
 
-    sections.forEach((section) => observer.observe(section));
+    sections.forEach((section) => {
+        visibilityObserver.observe(section);
+        observer.observe(section);
+    });
 }
 
 function loadTurnstile() {
@@ -297,6 +308,10 @@ function onTurnstileSuccess(token) {
         return;
     }
 
+    if (gateError) {
+        gateError.textContent = "";
+    }
+
     requestInProgress = true;
 
     fetch(WORKER_URL, {
@@ -315,14 +330,23 @@ function onTurnstileSuccess(token) {
                 unlockSite();
                 return;
             }
-            resetTurnstile();
+            resetTurnstile("Verification failed. Please try again.");
         })
         .catch(() => {
-            resetTurnstile();
+            resetTurnstile("Something went wrong. Please try again.");
         })
         .finally(() => {
             requestInProgress = false;
         });
+}
+
+function animateHero() {
+    if (!heroSection) {
+        return;
+    }
+    heroSection.classList.remove("hero--ready");
+    void heroSection.offsetWidth;
+    heroSection.classList.add("hero--ready");
 }
 
 function unlockSite(immediate = false) {
@@ -335,6 +359,7 @@ function unlockSite(immediate = false) {
     }
 
     gate.classList.add("hidden");
+    animateHero();
     if (immediate) {
         gate.style.display = "none";
         return;
@@ -344,7 +369,10 @@ function unlockSite(immediate = false) {
     }, 280);
 }
 
-function resetTurnstile() {
+function resetTurnstile(errorMessage) {
+    if (errorMessage && gateError) {
+        gateError.textContent = errorMessage;
+    }
     if (window.turnstile && turnstileWidgetId !== null) {
         turnstile.reset(turnstileWidgetId);
     }
@@ -354,352 +382,6 @@ function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
 
-function setupCanvasResolution(canvas, ctx, width, height, dpr) {
-    if (!canvas || !ctx) {
-        return;
-    }
-
-    canvas.width = Math.floor(width * dpr);
-    canvas.height = Math.floor(height * dpr);
-    canvas.style.height = `${height}px`;
-    canvas.style.width = `${width}px`;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-
-function createTendrilSegment(anchorX, anchorY, index, spacing) {
-    const y = anchorY + (index * spacing);
-    return { x: anchorX, y, px: anchorX, py: y };
-}
-
-function buildTendrils() {
-    if (!tendrilState || !tendrilState.ctx) {
-        return;
-    }
-
-    const count = Math.max(5, Math.min(9, Math.floor(tendrilState.width / 180)));
-    const tendrils = [];
-    const spacing = 21;
-
-    for (let i = 0; i < count; i += 1) {
-        const anchorX = ((i + 0.5) / count) * tendrilState.width + ((i % 2) ? 18 : -18);
-        const anchorY = -26 + ((i % 3) * 8);
-        const points = [];
-        const pointCount = Math.ceil((tendrilState.height + 120) / spacing) + (i % 5);
-
-        for (let j = 0; j < pointCount; j += 1) {
-            points.push(createTendrilSegment(anchorX, anchorY, j, spacing));
-        }
-
-        tendrils.push({
-            anchorX,
-            anchorY,
-            points,
-            spacing,
-            swayOffset: Math.random() * Math.PI * 2,
-            swayStrength: 0.7 + Math.random() * 0.45,
-            oliveColor: (i % 2 === 0) ? "#5f7d34" : "#738f3e"
-        });
-    }
-
-    tendrilState.tendrils = tendrils;
-}
-
-
-function resizeTendrilCanvas() {
-    if (!tendrilState || !tendrilState.ctx) {
-        return;
-    }
-
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    setupCanvasResolution(tendrilCanvas, tendrilState.ctx, width, height, dpr);
-    tendrilState.width = width;
-    tendrilState.height = height;
-    buildTendrils();
-}
-
-function applySegmentPhysics(tendril, time) {
-    const points = tendril.points;
-    const baseWind = Math.sin(time * 0.0009 + tendril.swayOffset) * 0.16 * tendril.swayStrength;
-    const scrollWave = Math.sin((time * 0.0011) + (tendrilState.scrollY * 0.006) + tendril.swayOffset) * 0.13;
-    const scrollVelocityInfluence = clamp(tendrilState.scrollVelocity, -70, 70) * 0.012;
-
-    for (let i = 1; i < points.length; i += 1) {
-        const point = points[i];
-        const vx = (point.x - point.px) * 0.986;
-        const vy = (point.y - point.py) * 0.986;
-        const depthFactor = i / points.length;
-        point.px = point.x;
-        point.py = point.y;
-        point.x += vx + baseWind + scrollWave + (scrollVelocityInfluence * depthFactor);
-        point.y += vy + 0.2 + (Math.abs(scrollVelocityInfluence) * 0.03 * depthFactor);
-    }
-}
-
-function applyConstraints(tendril) {
-    const points = tendril.points;
-    points[0].x = tendril.anchorX;
-    points[0].y = tendril.anchorY;
-
-    for (let iteration = 0; iteration < 3; iteration += 1) {
-        points[0].x = tendril.anchorX;
-        points[0].y = tendril.anchorY;
-
-        for (let i = 1; i < points.length; i += 1) {
-            const prev = points[i - 1];
-            const point = points[i];
-            const dx = point.x - prev.x;
-            const dy = point.y - prev.y;
-            const dist = Math.hypot(dx, dy) || 0.001;
-            const diff = (dist - tendril.spacing) / dist;
-
-            if (i === 1) {
-                point.x -= dx * diff;
-                point.y -= dy * diff;
-            } else {
-                point.x -= dx * diff * 0.5;
-                point.y -= dy * diff * 0.5;
-                prev.x += dx * diff * 0.5;
-                prev.y += dy * diff * 0.5;
-            }
-        }
-    }
-}
-
-function interactTendrils(ctx) {
-    if (!tendrilState) {
-        return;
-    }
-
-    const tips = tendrilState.tendrils.map((tendril) => tendril.points[tendril.points.length - 1]);
-
-    for (let i = 0; i < tips.length; i += 1) {
-        for (let j = i + 1; j < tips.length; j += 1) {
-            const a = tips[i];
-            const b = tips[j];
-            const dx = b.x - a.x;
-            const dy = b.y - a.y;
-            const distance = Math.hypot(dx, dy) || 0.001;
-
-            if (distance > 220) {
-                continue;
-            }
-
-            const closeness = 1 - (distance / 220);
-            const nx = dx / distance;
-            const ny = dy / distance;
-            const pull = closeness * 0.45;
-            const weave = Math.sin((tendrilState.tick * 0.012) + (i * 0.8) + (j * 0.45)) * closeness;
-            const perpendicularX = -ny;
-            const perpendicularY = nx;
-
-            a.x += nx * pull;
-            a.y += ny * pull * 0.4;
-            b.x -= nx * pull;
-            b.y -= ny * pull * 0.4;
-
-            if (distance < 120) {
-                a.x += perpendicularX * weave * 0.75;
-                a.y += perpendicularY * weave * 0.75;
-                b.x -= perpendicularX * weave * 0.75;
-                b.y -= perpendicularY * weave * 0.75;
-            }
-
-            ctx.strokeStyle = `rgba(110, 134, 67, ${0.22 * closeness})`;
-            ctx.lineWidth = 1 + (1.8 * closeness);
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            if (distance < 140) {
-                const mx = (a.x + b.x) * 0.5 + (perpendicularX * 9 * closeness);
-                const my = (a.y + b.y) * 0.5 + (perpendicularY * 9 * closeness);
-                ctx.quadraticCurveTo(mx, my, b.x, b.y);
-            } else {
-                ctx.lineTo(b.x, b.y);
-            }
-            ctx.stroke();
-        }
-    }
-}
-
-function applyPointerInfluence() {
-    if (!tendrilState || !tendrilState.pointer.active) {
-        return;
-    }
-
-    tendrilState.tendrils.forEach((tendril) => {
-        for (let i = 2; i < tendril.points.length; i += 1) {
-            const point = tendril.points[i];
-            const dx = point.x - tendrilState.pointer.x;
-            const dy = point.y - tendrilState.pointer.y;
-            const distance = Math.hypot(dx, dy) || 0.001;
-            if (distance > 130) {
-                continue;
-            }
-            const push = (130 - distance) / 130;
-            point.x += (dx / distance) * push * 1.8;
-            point.y += (dy / distance) * push * 1.2;
-        }
-    });
-}
-
-function drawTendril(ctx, tendril) {
-    const points = tendril.points;
-
-    const drawPath = () => {
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        for (let i = 1; i < points.length - 1; i += 1) {
-            const current = points[i];
-            const next = points[i + 1];
-            const midX = (current.x + next.x) * 0.5;
-            const midY = (current.y + next.y) * 0.5;
-            ctx.quadraticCurveTo(current.x, current.y, midX, midY);
-        }
-        const tipPoint = points[points.length - 1];
-        ctx.lineTo(tipPoint.x, tipPoint.y);
-    };
-
-    ctx.lineCap = "round";
-    ctx.strokeStyle = "rgba(176, 199, 120, 0.2)";
-    ctx.lineWidth = 3.3;
-    drawPath();
-    ctx.stroke();
-
-    ctx.strokeStyle = "rgba(75, 98, 40, 0.95)";
-    ctx.lineWidth = 1.85;
-    drawPath();
-    ctx.stroke();
-
-    const tip = points[points.length - 1];
-
-    for (let i = 3; i < points.length; i += 4) {
-        const node = points[i];
-        ctx.fillStyle = "rgba(184, 203, 136, 0.32)";
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, 2.6, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    for (let i = 4; i < points.length - 1; i += 6) {
-        const node = points[i];
-        const next = points[i + 1];
-        const angle = Math.atan2(next.y - node.y, next.x - node.x);
-        const side = (i % 12 === 0) ? 1 : -1;
-        const leafX = node.x + (Math.cos(angle + (side * 1.2)) * 8);
-        const leafY = node.y + (Math.sin(angle + (side * 1.2)) * 8);
-        ctx.fillStyle = "rgba(126, 156, 73, 0.55)";
-        ctx.beginPath();
-        ctx.ellipse(leafX, leafY, 4.8, 2.6, angle + (side * 0.4), 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    for (let i = 8; i < points.length - 1; i += 12) {
-        const node = points[i];
-        ctx.fillStyle = "rgba(92, 120, 48, 0.9)";
-        ctx.beginPath();
-        ctx.ellipse(node.x + 2, node.y + 2, 3.4, 4.8, Math.PI / 8, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    ctx.fillStyle = tendril.oliveColor;
-    ctx.beginPath();
-    ctx.ellipse(tip.x, tip.y, 5.2, 7.2, Math.PI / 7, 0, Math.PI * 2);
-    ctx.fill();
-}
-
-function animateTendrils(time) {
-    if (!tendrilState || !tendrilState.ctx) {
-        return;
-    }
-
-    const ctx = tendrilState.ctx;
-    tendrilState.tick = time;
-    tendrilState.scrollVelocity *= 0.9;
-    ctx.clearRect(0, 0, tendrilState.width, tendrilState.height);
-
-    tendrilState.tendrils.forEach((tendril) => {
-        applySegmentPhysics(tendril, time);
-        applyConstraints(tendril);
-    });
-
-    applyPointerInfluence();
-    interactTendrils(ctx);
-    tendrilState.tendrils.forEach((tendril) => drawTendril(ctx, tendril));
-    tendrilState.frame = window.requestAnimationFrame(animateTendrils);
-}
-
-function renderStaticTendrils() {
-    if (!tendrilState || !tendrilState.ctx) {
-        return;
-    }
-
-    const ctx = tendrilState.ctx;
-    ctx.clearRect(0, 0, tendrilState.width, tendrilState.height);
-
-    tendrilState.tendrils.forEach((tendril, index) => {
-        applySegmentPhysics(tendril, index * 35);
-        applyConstraints(tendril);
-    });
-
-    interactTendrils(ctx);
-    tendrilState.tendrils.forEach((tendril) => drawTendril(ctx, tendril));
-}
-
-function initTendrils() {
-    if (!tendrilCtx) {
-        return;
-    }
-
-    tendrilState = {
-        ctx: tendrilCtx,
-        width: 0,
-        height: 0,
-        tick: 0,
-        scrollY: window.scrollY,
-        lastScrollY: window.scrollY,
-        scrollVelocity: 0,
-        frame: 0,
-        tendrils: [],
-        pointer: { x: 0, y: 0, active: false }
-    };
-
-    resizeTendrilCanvas();
-    const reducedMotionEnabled = REDUCED_MOTION_QUERY.matches;
-
-    window.addEventListener("resize", () => {
-        resizeTendrilCanvas();
-        if (REDUCED_MOTION_QUERY.matches) {
-            renderStaticTendrils();
-        }
-    });
-
-    if (reducedMotionEnabled) {
-        renderStaticTendrils();
-        return;
-    }
-
-    window.addEventListener("pointermove", (event) => {
-        if (!tendrilState) {
-            return;
-        }
-        tendrilState.pointer.x = event.clientX;
-        tendrilState.pointer.y = event.clientY;
-        tendrilState.pointer.active = true;
-    });
-    window.addEventListener("pointerleave", () => {
-        if (tendrilState) {
-            tendrilState.pointer.active = false;
-        }
-    });
-
-    if (tendrilState.frame) {
-        window.cancelAnimationFrame(tendrilState.frame);
-    }
-    tendrilState.frame = window.requestAnimationFrame(animateTendrils);
-}
-
 function updateScrollUI() {
     const scrollTop = window.scrollY;
     header.classList.toggle("scrolled", scrollTop > 8);
@@ -707,19 +389,18 @@ function updateScrollUI() {
     const delta = scrollTop - lastScrollY;
     accumulatedScroll += delta;
 
-    if (delta > 0) { // Scrolling down
+    if (delta > 0) {
         if (accumulatedScroll > scrollThreshold && scrollTop > 200) {
             header.classList.add("hidden");
             nav.classList.add("header-hidden");
         }
-    } else { // Scrolling up
+    } else {
         if (accumulatedScroll < -scrollThreshold || scrollTop < 50) {
             header.classList.remove("hidden");
             nav.classList.remove("header-hidden");
         }
     }
 
-    // Reset accumulated scroll when direction changes significantly
     if ((delta > 0 && accumulatedScroll < 0) || (delta < 0 && accumulatedScroll > 0)) {
         accumulatedScroll = 0;
     }
@@ -736,30 +417,20 @@ function updateScrollUI() {
         heroSection.style.transform = `translateY(${shift}px)`;
     }
 
-/*
-    if (branchOverlay) {
-        const branchShift = clamp(scrollTop * 0.18, 0, 190);
-        branchOverlay.style.transform = `translateY(${branchShift}px)`;
-    }
-    */
-
     if (backToTopButton) {
         backToTopButton.classList.toggle("is-visible", scrollTop > 420);
     }
-
-    if (tendrilState) {
-        const currentY = scrollTop;
-        tendrilState.scrollVelocity = currentY - tendrilState.lastScrollY;
-        tendrilState.lastScrollY = currentY;
-        tendrilState.scrollY = currentY;
-
-        if (REDUCED_MOTION_QUERY.matches) {
-            renderStaticTendrils();
-        }
-    }
 }
 
-window.addEventListener("scroll", updateScrollUI);
+window.addEventListener("scroll", () => {
+    if (!scrollTicking) {
+        window.requestAnimationFrame(() => {
+            updateScrollUI();
+            scrollTicking = false;
+        });
+        scrollTicking = true;
+    }
+});
 
 langButton.addEventListener("click", () => {
     currentLang = currentLang === "EN" ? "DE" : "EN";
@@ -779,5 +450,4 @@ if (DEV_MODE) {
     ensureTurnstileScript();
     loadTurnstile();
 }
-// initTendrils();
 updateScrollUI();
