@@ -493,13 +493,6 @@ main {
     overflow: hidden;
 }
 
-/* Content is visible by default (and to crawlers / no-JS visitors).
-   The scroll fade-in only applies once JS has flagged the document. */
-html.js .about-section {
-    opacity: 0;
-    transform: translateY(12px);
-}
-
 .about-section::after {
     content: "";
     position: absolute;

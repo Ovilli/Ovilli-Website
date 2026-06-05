@@ -1,8 +1,5 @@
-// Progressive enhancement: HTML ships the real content; JS hydrates language
-// switching + scroll animations on top. Mark the document so CSS can apply the
-// fade-in only when JS is available (content stays visible without it).
-document.documentElement.classList.add("js");
-
+// Progressive enhancement: HTML ships the real content; JS only hydrates
+// language switching + scroll niceties. Body text is always visible without JS.
 const header = document.getElementById("main-header");
 const nav = document.getElementById("about-nav");
 const content = document.getElementById("about-content");
