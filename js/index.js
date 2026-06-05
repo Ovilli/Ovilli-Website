@@ -1,3 +1,8 @@
+// Progressive enhancement: HTML ships the real content; JS hydrates language
+// switching + scroll animations on top. Mark the document so CSS can apply the
+// fade-in only when JS is available (content stays visible without it).
+document.documentElement.classList.add("js");
+
 const header = document.getElementById("main-header");
 const nav = document.getElementById("about-nav");
 const content = document.getElementById("about-content");
@@ -18,31 +23,13 @@ const heroChip3 = document.getElementById("hero-chip-3");
 const brandSubline = document.getElementById("brand-subline");
 const footerText = document.getElementById("footer-text");
 
-const gateTitle = document.getElementById("gate-title");
-const gateCopy = document.getElementById("gate-copy");
-const gateError = document.getElementById("gate-error");
-
 let currentLang = "EN";
-let isVerified = false;
-let requestInProgress = false;
 let observer = null;
 let visibilityObserver = null;
-let turnstileWidgetId = null;
 let lastScrollY = window.scrollY;
 let scrollThreshold = 40;
 let accumulatedScroll = 0;
 let scrollTicking = false;
-
-const WORKER_URL = "https://ovilli-captcha.mzlatin4.workers.dev/";
-const TURNSTILE_SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-const DEV_MODE = (
-    ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) ||
-    window.location.search.includes("dev=1")
-);
-
-if (!DEV_MODE) {
-    document.body.classList.add("locked");
-}
 
 const SVG = {
     github: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`,
@@ -54,8 +41,6 @@ const translations = {
         htmlLang: "en",
         navLabel: "Explore",
         switchTo: "DE",
-        gateTitle: "Quick human check",
-        gateCopy: "Please verify before entering the site.",
         heroEyebrow: "Ovilli means olive",
         heroTitle: "Frontend Developer & Creative Coder",
         heroCopy: "I build interactive web experiences that blend clean code with playful visual design. Growing ideas into functional tools.",
@@ -92,7 +77,7 @@ const translations = {
             {
                 id: "projects",
                 title: "Projects",
-                text: "I build personal products that mix function and atmosphere: interactive landing pages, mini tools, playful UI concepts, and automation helpers that save time.",
+                text: "I build personal products that mix function and atmosphere: interactive landing pages, mini tools, playful UI concepts, and automation helpers that save time. My largest is the <a href=\"projects.html\">Ravenswatch Mod Manager</a>, a cross-platform tool for installing and managing community mods.",
                 items: ["Interactive personal websites", "Web animations and visual systems", "Utility scripts and automation", "Experimental UI components"]
             },
             {
@@ -117,8 +102,6 @@ const translations = {
         htmlLang: "de",
         navLabel: "Bereiche",
         switchTo: "EN",
-        gateTitle: "Kurzer Mensch-Check",
-        gateCopy: "Bitte bestaetigen, bevor du die Seite betrittst.",
         heroEyebrow: "Ovilli bedeutet Olive",
         heroTitle: "Frontend Developer & Creative Coder",
         heroCopy: "Ich entwickle interaktive Web-Erlebnisse, die sauberen Code mit spielerischem Design verbinden. Ideen werden zu funktionalen Tools.",
@@ -155,7 +138,7 @@ const translations = {
             {
                 id: "projects",
                 title: "Projekte",
-                text: "Ich baue persoenliche Projekte mit Funktion und Stimmung: interaktive Seiten, kleine Tools, spielerische UI-Konzepte und hilfreiche Automationen.",
+                text: "Ich baue persoenliche Projekte mit Funktion und Stimmung: interaktive Seiten, kleine Tools, spielerische UI-Konzepte und hilfreiche Automationen. Mein groesstes ist der <a href=\"projects.html\">Ravenswatch Mod Manager</a>, ein plattformuebergreifendes Tool zum Installieren und Verwalten von Community-Mods.",
                 items: ["Interaktive Webseiten", "Web-Animationen", "Utility-Skripte", "Experimentelle UI-Bausteine"]
             },
             {
@@ -184,8 +167,6 @@ function render() {
 
     document.documentElement.lang = t.htmlLang;
     langButton.textContent = t.switchTo;
-    gateTitle.textContent = t.gateTitle;
-    gateCopy.textContent = t.gateCopy;
     heroEyebrow.textContent = t.heroEyebrow;
     heroTitle.textContent = t.heroTitle;
     heroCopy.textContent = t.heroCopy;
@@ -263,83 +244,6 @@ function setupObserver() {
     });
 }
 
-function loadTurnstile() {
-    if (isVerified) {
-        return;
-    }
-
-    if (!window.turnstile) {
-        setTimeout(loadTurnstile, 120);
-        return;
-    }
-
-    const box = document.getElementById("turnstile-box");
-    if (!box) {
-        return;
-    }
-
-    box.innerHTML = "";
-    turnstileWidgetId = turnstile.render("#turnstile-box", {
-        sitekey: "0x4AAAAAACwW_d7_86SOKI22",
-        callback: onTurnstileSuccess
-    });
-}
-
-function ensureTurnstileScript() {
-    if (window.turnstile) {
-        return;
-    }
-
-    const existing = document.getElementById("turnstile-script");
-    if (existing) {
-        return;
-    }
-
-    const script = document.createElement("script");
-    script.id = "turnstile-script";
-    script.src = TURNSTILE_SCRIPT_SRC;
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-}
-
-function onTurnstileSuccess(token) {
-    if (requestInProgress || isVerified) {
-        return;
-    }
-
-    if (gateError) {
-        gateError.textContent = "";
-    }
-
-    requestInProgress = true;
-
-    fetch(WORKER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token })
-    })
-        .then(async (response) => {
-            if (!response.ok) {
-                throw new Error("Verification request failed");
-            }
-            return response.json();
-        })
-        .then((data) => {
-            if (data.success) {
-                unlockSite();
-                return;
-            }
-            resetTurnstile("Verification failed. Please try again.");
-        })
-        .catch(() => {
-            resetTurnstile("Something went wrong. Please try again.");
-        })
-        .finally(() => {
-            requestInProgress = false;
-        });
-}
-
 function animateHero() {
     if (!heroSection) {
         return;
@@ -347,35 +251,6 @@ function animateHero() {
     heroSection.classList.remove("hero--ready");
     void heroSection.offsetWidth;
     heroSection.classList.add("hero--ready");
-}
-
-function unlockSite(immediate = false) {
-    isVerified = true;
-    document.body.classList.remove("locked");
-
-    const gate = document.getElementById("gate");
-    if (!gate) {
-        return;
-    }
-
-    gate.classList.add("hidden");
-    animateHero();
-    if (immediate) {
-        gate.style.display = "none";
-        return;
-    }
-    setTimeout(() => {
-        gate.style.display = "none";
-    }, 280);
-}
-
-function resetTurnstile(errorMessage) {
-    if (errorMessage && gateError) {
-        gateError.textContent = errorMessage;
-    }
-    if (window.turnstile && turnstileWidgetId !== null) {
-        turnstile.reset(turnstileWidgetId);
-    }
 }
 
 function clamp(value, min, max) {
@@ -444,10 +319,5 @@ if (backToTopButton) {
 }
 
 render();
-if (DEV_MODE) {
-    unlockSite(true);
-} else {
-    ensureTurnstileScript();
-    loadTurnstile();
-}
+animateHero();
 updateScrollUI();

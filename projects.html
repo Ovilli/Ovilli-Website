@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects — Ravenswatch Mod Manager | Ovilli</title>
+    <meta name="description" content="Ravenswatch Mod Manager — a cross-platform tool by Ovilli for installing, browsing, and managing community mods for the game Ravenswatch.">
+    <meta name="google-adsense-account" content="ca-pub-9139637424510522">
+    <meta property="og:title" content="Projects — Ravenswatch Mod Manager">
+    <meta property="og:description" content="A cross-platform mod manager for Ravenswatch, built by Ovilli.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://ovilli.de/projects.html">
+    <meta name="theme-color" content="#6f8440">
+    <link rel="icon" href="assets/olive-svgrepo-com.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="olive-article-page">
+    <header class="site-header">
+        <div class="header-brand">
+            <div class="olive-icon">
+                <img src="assets/olive-svgrepo-com.svg" alt="Olive Icon">
+            </div>
+            <div>
+                <div class="olive-text">Ovilli</div>
+                <p class="brand-subline">Projects</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="index.html" class="olive-page-link">Back to Home</a>
+        </div>
+    </header>
+
+    <main class="olive-article-main">
+        <article class="olive-article">
+            <h1>Ravenswatch Mod Manager</h1>
+            <p class="olive-article-intro">
+                Ravenswatch Mod Manager (RSMM) is a free, open-source tool I built for installing, browsing, and managing community-made mods for <em>Ravenswatch</em>, the roguelite action game by Passtech Games. It runs in the browser and as a native desktop app on Windows, macOS, and Linux. This page is a write-up of what it does and how it works under the hood.
+            </p>
+
+            <h2>What it does</h2>
+            <p>
+                Modding a game usually means copying files into the right folders by hand, keeping track of what you changed, and undoing it all when something breaks. RSMM removes that friction. It discovers your game install, lets you enable or disable mods from a clean interface, and keeps a record of every change so the original game can be restored with a single action. There are no manual file edits and nothing permanent — disabling a mod puts the original files back exactly as they were.
+            </p>
+
+            <section class="olive-fact-grid">
+                <section class="olive-fact">
+                    <h2>One-click install</h2>
+                    <p>
+                        Browse a registry of community mods and apply them without touching the game's folders yourself. Each mod ships as declarative data, not executable scripts.
+                    </p>
+                </section>
+
+                <section class="olive-fact">
+                    <h2>Safe and reversible</h2>
+                    <p>
+                        Every original file is backed up before it is replaced, and the manager tracks its own state. Removing a mod — or the whole manager — restores the game completely.
+                    </p>
+                </section>
+
+                <section class="olive-fact">
+                    <h2>Cross-platform</h2>
+                    <p>
+                        A single codebase powers the browser version and the desktop apps for Windows, macOS, and Linux, so the experience is the same everywhere.
+                    </p>
+                </section>
+
+                <section class="olive-fact">
+                    <h2>Open source</h2>
+                    <p>
+                        The full project — the command-line core, the desktop shell, and the website — is public on GitHub for anyone to read, audit, or contribute to.
+                    </p>
+                </section>
+            </section>
+
+            <h2>How it works</h2>
+            <p>
+                Ravenswatch loads its assets from a cooked content folder where each file's path is obfuscated with a fixed character cipher. RSMM understands that format: it maps a human-readable asset path to its on-disk encoded name, backs up the original, and copies the replacement into place. Because the engine accepts any byte-compatible file, texture and asset swaps work entirely through file replacement — no live memory patching of the game is involved. For Lua-scripted mods on Windows, an optional loader can inject a scripting runtime, but the core texture and data mods need none of that.
+            </p>
+            <p>
+                A guiding rule of the project is that <strong>mods ship data, not code</strong>. Instead of every mod bundling its own install script, the shared toolkit handles cooking assets, registering new content, and applying or restoring changes. A new mod is a small declarative manifest plus the assets it provides — which keeps the whole ecosystem easy to review and safe to run.
+            </p>
+
+            <h2>Tech stack</h2>
+            <p>
+                The install and lifecycle logic is a Python command-line tool with no runtime dependencies. The desktop app is a Tauri 2 shell that bundles that same CLI as a sidecar, so the desktop and the terminal behave identically. The website and registry are built with Next.js, and the documentation and shared packages live in a single monorepo. The native loader for Lua mods is a small C++ component built with CMake.
+            </p>
+
+            <h2>Why I built it</h2>
+            <p>
+                I wanted modding <em>Ravenswatch</em> to feel approachable for players who are not comfortable editing game files, while keeping it transparent enough that more technical users can see exactly what every change does. Working on it has been a deep dive into reverse-engineering an asset format, designing a reversible install pipeline, and shipping the same core to four different platforms — the kind of end-to-end project I enjoy most.
+            </p>
+
+            <p class="olive-article-intro" style="margin-top: 2rem;">
+                The project lives at <a href="https://github.com/Ovilli/RavenswatchModManager" target="_blank" rel="noreferrer">github.com/Ovilli/RavenswatchModManager</a>.
+            </p>
+        </article>
+    </main>
+
+    <footer class="olive-footer">
+        <div class="footer-links">
+            <a href="index.html">Home</a>
+            <span class="footer-separator">•</span>
+            <a href="privacy.html">Privacy & Cookies</a>
+            <span class="footer-separator">•</span>
+            <a href="impressum.html">Impressum</a>
+        </div>
+        <div class="footer-text">Official Website of Ovilli</div>
+        <a href="https://github.com/ovilli" target="_blank" rel="noreferrer" class="footer-icon" aria-label="GitHub">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        </a>
+    </footer>
+</body>
+</html>

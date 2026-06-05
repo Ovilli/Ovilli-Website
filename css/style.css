@@ -486,13 +486,18 @@ main {
     background: rgba(255, 255, 255, 0.76);
     padding: 1.25rem 1.2rem;
     box-shadow: 0 8px 18px rgba(36, 49, 18, 0.08);
-    opacity: 0;
-    transform: translateY(12px);
     transition: opacity 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
     backdrop-filter: blur(6px);
     transition-delay: var(--reveal-delay, 0ms);
     position: relative;
     overflow: hidden;
+}
+
+/* Content is visible by default (and to crawlers / no-JS visitors).
+   The scroll fade-in only applies once JS has flagged the document. */
+html.js .about-section {
+    opacity: 0;
+    transform: translateY(12px);
 }
 
 .about-section::after {
