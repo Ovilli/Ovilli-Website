@@ -74,7 +74,7 @@ const translations = {
             {
                 id: "projects",
                 title: "Projects",
-                text: "I build personal products that mix function and atmosphere: interactive landing pages, mini tools, playful UI concepts, and automation helpers that save time. My largest is the <a href=\"projects.html\">Ravenswatch Mod Manager</a>, a cross-platform tool for installing and managing community mods.",
+                text: "I build personal products that mix function and atmosphere: interactive landing pages, mini tools, playful UI concepts, and automation helpers that save time. My largest is the <a href=\"projects.html\">Ravenswatch Mod Manager</a>, a cross-platform tool for installing and managing community mods — I also wrote a <a href=\"ravenswatch-guide.html\">beginner's guide to modding Ravenswatch</a>.",
                 items: ["Interactive personal websites", "Web animations and visual systems", "Utility scripts and automation", "Experimental UI components"]
             },
             {
@@ -135,7 +135,7 @@ const translations = {
             {
                 id: "projects",
                 title: "Projekte",
-                text: "Ich baue persoenliche Projekte mit Funktion und Stimmung: interaktive Seiten, kleine Tools, spielerische UI-Konzepte und hilfreiche Automationen. Mein groesstes ist der <a href=\"projects.html\">Ravenswatch Mod Manager</a>, ein plattformuebergreifendes Tool zum Installieren und Verwalten von Community-Mods.",
+                text: "Ich baue persoenliche Projekte mit Funktion und Stimmung: interaktive Seiten, kleine Tools, spielerische UI-Konzepte und hilfreiche Automationen. Mein groesstes ist der <a href=\"projects.html\">Ravenswatch Mod Manager</a>, ein plattformuebergreifendes Tool zum Installieren und Verwalten von Community-Mods — ich habe ausserdem einen <a href=\"ravenswatch-guide.html\">Einsteiger-Guide zum Modden von Ravenswatch</a> geschrieben.",
                 items: ["Interaktive Webseiten", "Web-Animationen", "Utility-Skripte", "Experimentelle UI-Bausteine"]
             },
             {

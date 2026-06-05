@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Mod Ravenswatch — A Beginner's Guide | Ovilli</title>
+    <meta name="description" content="A beginner-friendly guide to modding Ravenswatch safely: how mods work, how to install and remove them with Ravenswatch Mod Manager, and how to restore the original game.">
+    <meta name="google-adsense-account" content="ca-pub-9139637424510522">
+    <meta property="og:title" content="How to Mod Ravenswatch — A Beginner's Guide">
+    <meta property="og:description" content="Install and manage Ravenswatch mods safely, and restore the game any time.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://ovilli.de/ravenswatch-guide.html">
+    <meta name="theme-color" content="#6f8440">
+    <link rel="icon" href="assets/olive-svgrepo-com.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="olive-article-page">
+    <header class="site-header">
+        <div class="header-brand">
+            <div class="olive-icon">
+                <img src="assets/olive-svgrepo-com.svg" alt="Olive Icon">
+            </div>
+            <div>
+                <div class="olive-text">Ovilli</div>
+                <p class="brand-subline">Ravenswatch modding guide</p>
+            </div>
+        </div>
+        <nav class="header-actions" aria-label="Primary">
+            <a href="index.html" class="olive-page-link">Home</a>
+            <a href="projects.html" class="olive-page-link">Projects</a>
+            <a href="ravenswatch-guide.html" class="olive-page-link">Guide</a>
+            <a href="olives.html" class="olive-page-link">Olives</a>
+        </nav>
+    </header>
+
+    <main class="olive-article-main">
+        <article class="olive-article">
+            <h1>How to Mod Ravenswatch — A Beginner's Guide</h1>
+            <p class="olive-article-intro">
+                <em>Ravenswatch</em> is a roguelite action game by Passtech Games, and like most games it is more fun when you can tweak it. This guide explains, in plain language, how modding the game actually works, how to install and remove mods safely using the <a href="projects.html">Ravenswatch Mod Manager</a> I built, and how to put everything back to normal whenever you want. No prior modding experience needed.
+            </p>
+
+            <h2>How Ravenswatch mods work</h2>
+            <p>
+                Ravenswatch stores its art, data, and other assets in a "cooked" content folder. Each file's path inside that folder is scrambled with a fixed character cipher, which is why the folder looks like a pile of unreadable names. A mod is simply a replacement for one or more of those files — a new texture, a tweaked stats file, and so on. Because the game happily loads any file that has the correct format, you can change a lot just by swapping files in and out. There is no need to patch the running game in memory for most mods.
+            </p>
+            <p>
+                Doing this by hand is risky: you have to find the right scrambled filename, keep a copy of the original, and remember exactly what you changed. Forget one step and you can end up reinstalling the whole game. A mod manager exists to handle all of that bookkeeping for you.
+            </p>
+
+            <h2>The golden rule: always keep a backup</h2>
+            <p>
+                Before changing any game file, make sure you can get the original back. Ravenswatch Mod Manager does this automatically — it copies the original file to a backup before replacing it, and records every change in its own state file. But if you ever mod by hand, copy the file somewhere safe first. This one habit prevents almost every "I broke my game" situation.
+            </p>
+
+            <h2>Installing a mod with Ravenswatch Mod Manager</h2>
+            <p>
+                The manager removes the manual steps. The typical flow looks like this:
+            </p>
+            <ul class="topic-list">
+                <li><strong>Point it at your game.</strong> On first run the tool locates your Ravenswatch installation. If it cannot find it, you can set the folder manually.</li>
+                <li><strong>Browse or add a mod.</strong> Pick a mod from the registry, or drop a local mod folder into your mods directory.</li>
+                <li><strong>Apply.</strong> The manager backs up the affected original files, then copies the mod's files into the right (scrambled) locations.</li>
+                <li><strong>Launch and play.</strong> Start the game as usual. Your changes are live.</li>
+            </ul>
+            <p>
+                Because everything is tracked, you can enable several mods and keep a clear picture of what is active.
+            </p>
+
+            <h2>Removing a mod or restoring the game</h2>
+            <p>
+                This is where a manager really earns its place. To remove a single mod, disable it and the tool restores the original files it replaced. To return the game to a completely clean state, run the restore-all action: every backed-up file is put back and the tracking state is cleared. After that, the game is exactly as it was before you started — you can even verify file integrity through your game launcher and it should report no changes.
+            </p>
+
+            <h2>Staying safe online</h2>
+            <p>
+                A few sensible habits go a long way:
+            </p>
+            <ul class="topic-list">
+                <li>Prefer mods that ship <strong>data, not executable scripts</strong>. A texture or a stats tweak cannot do much harm; a random executable can.</li>
+                <li>Restore the original game before installing updates, then re-apply your mods afterwards. Game patches can change file formats.</li>
+                <li>Be considerate in multiplayer. Cosmetic and personal tweaks are one thing; changing shared gameplay can affect other players or simply fail to sync.</li>
+                <li>Keep backups. With a manager this is automatic, but it is still the most important rule.</li>
+            </ul>
+
+            <h2>Common questions</h2>
+            <section class="olive-fact-grid">
+                <section class="olive-fact">
+                    <h2>Will mods get me banned?</h2>
+                    <p>
+                        Single-player and cosmetic mods are low risk. As always, respect the game's terms of service, and be cautious about anything that changes online play.
+                    </p>
+                </section>
+                <section class="olive-fact">
+                    <h2>Can I undo everything?</h2>
+                    <p>
+                        Yes. The whole point of the manager is that every change is backed up and reversible. Restore-all returns the game to its original files.
+                    </p>
+                </section>
+                <section class="olive-fact">
+                    <h2>Do I need to be technical?</h2>
+                    <p>
+                        No. The desktop app gives you a simple interface. The same features are also available from a command line if you prefer that.
+                    </p>
+                </section>
+                <section class="olive-fact">
+                    <h2>What about game updates?</h2>
+                    <p>
+                        Restore the game before updating, let the patch install, then re-apply your mods. This avoids conflicts when file formats change.
+                    </p>
+                </section>
+            </section>
+
+            <p class="olive-article-intro" style="margin-top: 2rem;">
+                Ready to try it? Read more about the tool on the <a href="projects.html">Ravenswatch Mod Manager project page</a>, or get it from <a href="https://github.com/Ovilli/RavenswatchModManager" target="_blank" rel="noreferrer">GitHub</a>.
+            </p>
+        </article>
+    </main>
+
+    <footer class="olive-footer">
+        <div class="footer-links">
+            <a href="index.html">Home</a>
+            <span class="footer-separator">•</span>
+            <a href="projects.html">Projects</a>
+            <span class="footer-separator">•</span>
+            <a href="privacy.html">Privacy & Cookies</a>
+            <span class="footer-separator">•</span>
+            <a href="impressum.html">Impressum</a>
+        </div>
+        <div class="footer-text">Official Website of Ovilli</div>
+        <a href="https://github.com/ovilli" target="_blank" rel="noreferrer" class="footer-icon" aria-label="GitHub">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        </a>
+    </footer>
+</body>
+</html>
