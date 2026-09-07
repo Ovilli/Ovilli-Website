@@ -1,100 +1,270 @@
-/* Ovilli — one page, centered, monospace, dark.
-   System mono only, no webfonts: a .de site pulling Google Fonts is a GDPR problem. */
-
 :root {
-    --bg: #12140d;
-    --dim: #6f7364;
-    --head: #a6ab93;
-    --link: #8a9366;
-    --link-hover: #d9e2b3;
+    --ambient-x: 0%;
+    --ambient-y: 0%;
+    --bg: #11130d;
+    --text: #c4c9b6;
+    --muted: #828773;
+    --olive: #a6b46f;
     --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
 }
 
+* { box-sizing: border-box; }
+
 body {
+    position: relative;
+    isolation: isolate;
+    min-width: 320px;
     margin: 0;
-    padding: 0 1.25rem 5rem;
-    background: var(--bg);
-    background-image: radial-gradient(ellipse at 50% 0%, #1c2013 0%, #12140d 62%);
-    background-attachment: fixed;
-    color: var(--dim);
+    overflow-x: hidden;
+    color: var(--text);
+    background:
+        radial-gradient(ellipse 52rem 28rem at calc(12% + var(--ambient-x)) calc(-8% + var(--ambient-y)), rgba(117, 133, 66, .22), transparent 66%),
+        radial-gradient(ellipse 42rem 24rem at calc(92% - var(--ambient-x)) calc(30% - var(--ambient-y)), rgba(77, 92, 49, .13), transparent 70%),
+        radial-gradient(ellipse 34rem 18rem at 50% 105%, rgba(38, 49, 22, .32), transparent 72%),
+        var(--bg);
     font-family: var(--mono);
-    font-size: 0.9rem;
-    line-height: 1.7;
-    text-align: center;
+    font-size: 15px;
+    line-height: 1.65;
+}
+
+body::before {
+    position: fixed;
+    z-index: -1;
+    inset: 0;
+    content: "";
+    pointer-events: none;
+    opacity: .2;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E");
+    mix-blend-mode: soft-light;
+}
+
+body::after {
+    position: fixed;
+    z-index: -1;
+    inset: -8%;
+    content: "";
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse 32% 36% at 22% 35%, rgba(150, 166, 83, .07), transparent 72%),
+        radial-gradient(ellipse 30% 32% at 77% 72%, rgba(100, 122, 62, .08), transparent 72%),
+        radial-gradient(ellipse at center, transparent 36%, rgba(0, 0, 0, .24) 100%);
+    animation: ambient-drift 90s ease-in-out infinite alternate;
+}
+
+@keyframes ambient-drift {
+    from { transform: translate3d(-.35%, -.25%, 0) scale(1); }
+    to { transform: translate3d(.35%, .25%, 0) scale(1.008); }
+}
+
+.background-pulse {
+    position: fixed;
+    z-index: -1;
+    top: var(--pulse-y);
+    left: var(--pulse-x);
+    width: 3.5rem;
+    height: 3.5rem;
+    pointer-events: none;
+    background: url("../assets/olive.svg") center / contain no-repeat;
+    animation: olive-ripple 1.45s ease-out forwards;
+}
+
+@keyframes olive-ripple {
+    0% { opacity: 0; transform: translate(-50%, -50%) rotate(-10deg) scale(.15); }
+    16% { opacity: .32; }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(13deg) scale(5.5); }
+}
+
+.page {
+    width: min(100% - 2.5rem, 38rem);
+    margin: 0 auto;
+    padding: 5rem 0 3rem;
+}
+
+.intro { margin-bottom: 1.75rem; animation: page-in .7s ease-out both; }
+.intro + section { animation: page-in .7s .12s ease-out both; }
+.contact { animation: page-in .7s .22s ease-out both; }
+footer { animation: page-in .7s .32s ease-out both; }
+
+@keyframes page-in {
+    from { opacity: 0; transform: translateY(.65rem); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.mark-button {
+    position: relative;
+    display: block;
+    width: 5rem;
+    height: 5rem;
+    margin: 0 0 1.6rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
 }
 
 .mark {
     display: block;
-    margin: 5rem auto 1rem;
-    opacity: 0.9;
+    width: 5rem;
+    height: 5rem;
+    opacity: .88;
+    transition: transform .35s ease, opacity .25s ease;
 }
 
-.tagline {
-    font-style: italic;
+.mark-button:not(:disabled):hover .mark { opacity: 1; transform: rotate(-5deg) scale(1.05); }
+.mark-button:focus-visible { outline: 1px solid var(--olive); outline-offset: 4px; }
+.mark-button:disabled { cursor: default; }
+.mark-button.is-cooling .mark { opacity: .55; transform: scale(.94); }
+
+.mark-note {
+    position: absolute;
+    bottom: calc(100% + .35rem);
+    left: 50%;
+    width: max-content;
+    color: var(--olive);
+    font-family: var(--mono);
+    font-size: .65rem;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, .25rem);
+    transition: opacity .3s ease, transform .3s ease;
 }
+
+.mark-button.is-noted .mark-note {
+    opacity: .9;
+    transform: translate(-50%, 0);
+}
+
+h1, h2, p { margin-top: 0; }
 
 h1 {
-    margin: 2.25rem 0 1.25rem;
-    color: var(--head);
-    font-size: 1rem;
-    font-weight: normal;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    text-shadow: 1px 1px 2px #000;
+    margin-bottom: .65rem;
+    color: var(--text);
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: .04em;
 }
 
-p {
-    max-width: 34rem;
-    margin: 0.35rem auto;
-    font-style: italic;
-    text-shadow: 1px 1px 1px #000;
+.intro p {
+    margin-bottom: .2rem;
+    color: var(--muted);
+    font-size: .9rem;
 }
 
-a {
-    color: var(--link);
-    text-decoration: none;
-    transition: color 0.5s;
+.intro .now {
+    margin-top: 1.15rem;
+    margin-bottom: 0;
+    max-width: 32rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: .78rem;
 }
 
-a:hover,
-a:focus-visible {
-    color: var(--link-hover);
-    transition: color 0.2s;
+.now span { color: var(--olive); }
+.now a { color: inherit; }
+.now a:hover { color: var(--text); }
+
+section {
+    position: relative;
 }
 
-:focus-visible {
-    outline: 1px solid var(--link);
-    outline-offset: 4px;
-}
+section + section { margin-top: 3.5rem; }
 
-/* Their § becomes our olive — same idea, our own mark. */
-hr {
-    border: 0;
-    margin: 2.75rem 0 0;
-    line-height: 1;
-}
-
-hr::after {
+.intro + section::before {
+    display: block;
+    width: 2.25rem;
+    height: 1px;
+    margin-bottom: 1.75rem;
     content: "";
-    display: inline-block;
-    width: 0.5rem;
-    height: 0.62rem;
-    border-radius: 50% 50% 48% 52% / 60% 60% 40% 40%;
-    background: var(--link);
-    transform: rotate(-12deg);
-    opacity: 0.8;
+    background: var(--olive);
+    opacity: .45;
 }
 
-.fineprint {
-    margin-top: 2.5rem;
-    font-size: 0.72rem;
+h2 {
+    margin-bottom: 1rem;
+    color: var(--text);
+    font-size: .85rem;
+    font-weight: 400;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.projects { display: grid; gap: .8rem; }
+
+.project {
+    display: inline;
+    color: #bdcb82;
+    font-size: .9rem;
+    text-decoration: none;
+}
+
+.project strong {
+    font-weight: 400;
+    background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+    transition: background-size .2s ease;
+}
+.project:hover strong, .project:focus-visible strong { background-size: 100% 1px; }
+.project-type {
+    margin-left: .45rem;
+    color: var(--muted);
+    font-size: .68rem;
     font-style: normal;
-    line-height: 1.6;
-    opacity: 0.6;
+    white-space: nowrap;
+    transition: color .2s ease, transform .2s ease;
+}
+.project:hover .project-type { color: var(--olive); transform: translateX(.12rem); }
+.project span { color: var(--muted); }
+.project span::before { content: " — "; }
+.project:hover, .links a:hover { color: #d5e2a5; }
+.project:focus-visible, .links a:focus-visible, footer a:focus-visible { outline: 1px solid var(--olive); outline-offset: 3px; }
+
+.links { display: flex; flex-wrap: wrap; gap: 1.25rem; }
+.links a {
+    color: var(--olive);
+    font-size: .85rem;
+    text-decoration: none;
+    transition: color .2s ease, transform .2s ease;
+}
+.links a:hover { transform: translateX(.16rem); }
+
+footer {
+    margin-top: 5rem;
+    color: var(--muted);
+    font-size: .68rem;
+}
+
+footer p { margin: .2rem 0; }
+footer a { color: inherit; }
+footer a:hover { color: var(--olive); }
+
+@media (max-width: 520px) {
+    body { font-size: 14px; }
+    .page {
+        width: min(100% - 2rem, 38rem);
+        padding-top: max(2.75rem, env(safe-area-inset-top));
+        padding-bottom: max(2.5rem, env(safe-area-inset-bottom));
+    }
+    .mark-button { width: 4.25rem; height: 4.25rem; margin-bottom: 1.35rem; }
+    .mark { width: 4.25rem; height: 4.25rem; }
+    .intro { margin-bottom: 1.5rem; }
+    section + section { margin-top: 3rem; }
+    .intro + section::before { margin-bottom: 1.5rem; }
+    h2 { margin-bottom: .9rem; font-size: .78rem; }
+    .projects { gap: .9rem; }
+    .project { display: block; padding: .25rem 0; line-height: 1.7; }
+    .project-type { margin-left: .35rem; font-size: .63rem; }
+    .project span::before { content: ", "; }
+    .links { gap: .5rem 1.25rem; }
+    .links a { padding: .35rem 0; }
+    .intro .now { max-width: 100%; }
+    footer { margin-top: 4rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    a {
-        transition: none;
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
     }
 }

@@ -12,40 +12,121 @@
     <meta property="og:url" content="https://ovilli.de">
     <meta property="og:image" content="https://ovilli.de/assets/og.png">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="theme-color" content="#12140d">
-    <link rel="icon" href="assets/olive-svgrepo-com.svg" type="image/svg+xml">
+    <meta name="theme-color" content="#11130d">
+    <link rel="icon" href="assets/olive.svg" type="image/svg+xml">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <main class="page">
+        <header class="intro">
+            <button class="mark-button" type="button" aria-label="Leave a note with the olive">
+                <span class="mark-note" aria-live="polite">i was here. <span id="olive-count">0</span></span>
+                <img class="mark" src="assets/olive.svg" alt="Olive branch" width="80" height="80">
+            </button>
+            <h1>Ovilli</h1>
+            <p>I make things, mostly around games.</p>
+            <p>Mostly tools I wanted to exist.</p>
+            <p class="now"><span>now:</span> <a id="latest-commit" href="#built-title">looking for a recent commit</a></p>
+        </header>
 
-<img class="mark" src="assets/olive-svgrepo-com.svg" alt="Olive" width="72" height="72">
+        <section aria-labelledby="built-title">
+            <h2 id="built-title">Things I’ve made</h2>
+            <div class="projects">
+                <a class="project" href="https://rsmm.me"><strong>Ravenswatch Mod Manager</strong><em class="project-type">mod tool</em><span>install mods without moving files around</span></a>
+                <a class="project" href="https://github.com/ovilli/yabranked"><strong>YAB Ranked</strong><em class="project-type">web app</em><span>a ranked ladder for a Minecraft bingo game</span></a>
+                <!-- <a class="project" href="https://ovilli.github.io/Orbit/"><strong>Orbit</strong><span>a Minecraft launcher</span></a> -->
+                <a class="project" href="https://github.com/ovilli/DecoderJpeg"><strong>JPEG Decoder</strong><em class="project-type">C</em><span>written from scratch in C</span></a>
+                <a class="project" href="https://github.com/ovilli/LANGuard"><strong>LANGuard</strong><em class="project-type">Minecraft mod</em><span>a whitelist for Minecraft LAN worlds</span></a>
+            </div>
+        </section>
 
-<p class="tagline">Ovilli means olive.</p>
+        <section class="contact" aria-labelledby="elsewhere-title">
+            <h2 id="elsewhere-title">Elsewhere</h2>
+            <div class="links">
+                <a href="mailto:ovilli@ovilli.de">ovilli@ovilli.de</a>
+                <a href="https://github.com/ovilli">github.com/ovilli</a>
+            </div>
+        </section>
 
-<hr>
+        <footer>
+            <p>Private page by Ovilli, Germany. No cookies, no analytics, no ads.</p>
+        </footer>
+    </main>
+    <script>
+        const latestCommit = document.querySelector('#latest-commit');
+        const markButton = document.querySelector('.mark-button');
+        const oliveCount = document.querySelector('#olive-count');
+        const oliveCooldown = 3000;
+        let clicks = Number.parseInt(localStorage.getItem('ovilli-olive-clicks'), 10) || 0;
 
-<h1>Built</h1>
-<p><a href="https://rsmm.me">Ravenswatch Mod Manager &ndash; install mods without moving files around</a></p>
-<p><a href="https://github.com/ovilli/yabranked">YAB Ranked &ndash; a ranked ladder for a Minecraft bingo game</a></p>
-<p><a href="https://ovilli.github.io/Orbit/">Orbit &ndash; a Minecraft launcher</a></p>
-<p><a href="https://github.com/ovilli/DecoderJpeg">JPEG Decoder &ndash; written from scratch in C</a></p>
-<p><a href="https://github.com/ovilli/LANGuard">LANGuard &ndash; a whitelist for Minecraft LAN worlds</a></p>
+        oliveCount.textContent = clicks;
 
-<hr>
+        markButton.addEventListener('click', () => {
+            if (markButton.disabled) return;
 
-<h1>Elsewhere</h1>
-<p><a href="mailto:ovilli@ovilli.de">ovilli@ovilli.de</a></p>
-<p><a href="https://github.com/ovilli">github.com/ovilli</a></p>
+            clicks += 1;
+            oliveCount.textContent = clicks;
+            localStorage.setItem('ovilli-olive-clicks', clicks);
+            markButton.classList.add('is-noted');
+            markButton.classList.add('is-cooling');
+            markButton.disabled = true;
 
-<hr>
+            setTimeout(() => {
+                markButton.disabled = false;
+                markButton.classList.remove('is-cooling');
+            }, oliveCooldown);
+        });
 
-<!-- Purely private page: no ads, nothing on offer, so no postal address required.
-     If anything commercial is ever added, a full German Impressum has to go here. -->
-<p class="fineprint">
-    Private page by Ovilli, Germany. No cookies, no analytics, no ads.
-    Linked sites are the responsibility of their operators.
-    Olive icon by <a href="https://www.svgrepo.com">SVG Repo</a>.
-</p>
+        fetch('https://api.github.com/users/Ovilli/events/public?per_page=100')
+            .then(response => response.ok ? response.json() : Promise.reject())
+            .then(events => {
+                const push = events.find(event => event.type === 'PushEvent' && event.payload.head);
+                if (!push) throw new Error('No recent public commits');
 
+                return fetch(`https://api.github.com/repos/${push.repo.name}/commits/${push.payload.head}`)
+                    .then(response => response.ok ? response.json() : Promise.reject())
+                    .then(commit => {
+                        latestCommit.href = commit.html_url;
+                        latestCommit.textContent = commit.commit.message.split('\n')[0];
+                    });
+            })
+            .catch(() => {
+                latestCommit.href = '#built-title';
+                latestCommit.textContent = 'projects';
+            });
+
+        if (matchMedia('(hover: hover) and (pointer: fine)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            let x = 0;
+            let y = 0;
+            let targetX = 0;
+            let targetY = 0;
+
+            addEventListener('pointermove', event => {
+                targetX = (event.clientX / innerWidth - .5) * 8;
+                targetY = (event.clientY / innerHeight - .5) * 6;
+            });
+
+            addEventListener('pointerdown', event => {
+                if (event.target.closest('.mark-button')?.disabled) return;
+
+                const pulse = document.createElement('span');
+                pulse.className = 'background-pulse';
+                pulse.style.setProperty('--pulse-x', `${event.clientX}px`);
+                pulse.style.setProperty('--pulse-y', `${event.clientY}px`);
+                document.body.append(pulse);
+                pulse.addEventListener('animationend', () => pulse.remove(), { once: true });
+            });
+
+            const followPointer = () => {
+                x += (targetX - x) * .045;
+                y += (targetY - y) * .045;
+                document.documentElement.style.setProperty('--ambient-x', `${x}%`);
+                document.documentElement.style.setProperty('--ambient-y', `${y}%`);
+                requestAnimationFrame(followPointer);
+            };
+
+            followPointer();
+        }
+    </script>
 </body>
 </html>
