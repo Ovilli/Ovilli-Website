@@ -10,18 +10,24 @@
     <meta property="og:description" content="A few things I built.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://ovilli.de">
-    <meta property="og:image" content="https://ovilli.de/assets/og.png">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="theme-color" content="#11130d">
-    <link rel="icon" href="assets/olive.svg" type="image/svg+xml">
+    <meta name="color-scheme" content="dark light">
+    <link rel="icon" href="assets/olives-on-white-removebg-preview.png" type="image/png">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <div class="depth-scene" aria-hidden="true">
+        <span class="depth-layer depth-far"></span>
+        <span class="depth-layer depth-mid"></span>
+        <span class="depth-layer depth-near"></span>
+    </div>
+    <img class="corner-olive" src="assets/olives-on-white-removebg-preview.png" alt="" aria-hidden="true" width="40" height="40">
     <main class="page">
         <header class="intro">
-            <button class="mark-button" type="button" aria-label="Leave a note with the olive">
-                <span class="mark-note" aria-live="polite">i was here. <span id="olive-count">0</span></span>
-                <img class="mark" src="assets/olive.svg" alt="Olive branch" width="80" height="80">
+            <button class="mark-button" type="button" aria-label="Leave a note with the olive" aria-describedby="mark-note">
+                <span class="mark-note" id="mark-note" aria-live="polite">i was here. <span id="olive-count">0</span></span>
+                <img class="mark" src="assets/olives-on-white-removebg-preview.png" alt="Olive branch" width="80" height="80">
             </button>
             <h1>Ovilli</h1>
             <p>I make things, mostly around games.</p>
@@ -32,11 +38,11 @@
         <section aria-labelledby="built-title">
             <h2 id="built-title">Things I’ve made</h2>
             <div class="projects">
-                <a class="project" href="https://rsmm.me"><strong>Ravenswatch Mod Manager</strong><em class="project-type">mod tool</em><span>install mods without moving files around</span></a>
-                <a class="project" href="https://github.com/ovilli/yabranked"><strong>YAB Ranked</strong><em class="project-type">web app</em><span>a ranked ladder for a Minecraft bingo game</span></a>
+                <a class="project" href="https://rsmm.me" aria-label="Ravenswatch Mod Manager — mod tool. Install mods without moving files around."><strong>Ravenswatch Mod Manager</strong><em class="project-type">mod tool</em><span>install mods without moving files around</span></a>
+                <a class="project" href="https://github.com/ovilli/yabranked" aria-label="YAB Ranked — web app. A ranked ladder for a Minecraft bingo game."><strong>YAB Ranked</strong><em class="project-type">web app</em><span>a ranked ladder for a Minecraft bingo game</span></a>
                 <!-- <a class="project" href="https://ovilli.github.io/Orbit/"><strong>Orbit</strong><span>a Minecraft launcher</span></a> -->
-                <a class="project" href="https://github.com/ovilli/DecoderJpeg"><strong>JPEG Decoder</strong><em class="project-type">C</em><span>written from scratch in C</span></a>
-                <a class="project" href="https://github.com/ovilli/LANGuard"><strong>LANGuard</strong><em class="project-type">Minecraft mod</em><span>a whitelist for Minecraft LAN worlds</span></a>
+                <a class="project" href="https://github.com/ovilli/DecoderJpeg" aria-label="JPEG Decoder — C. Written from scratch in C."><strong>JPEG Decoder</strong><em class="project-type">C</em><span>written from scratch in C</span></a>
+                <a class="project" href="https://github.com/ovilli/LANGuard" aria-label="LANGuard — Minecraft mod. A whitelist for Minecraft LAN worlds."><strong>LANGuard</strong><em class="project-type">Minecraft mod</em><span>a whitelist for Minecraft LAN worlds</span></a>
             </div>
         </section>
 
@@ -50,23 +56,40 @@
 
         <footer>
             <p>Private page by Ovilli, Germany. No cookies, no analytics, no ads.</p>
+            <p class="ambient-count" aria-live="polite">background notes: <span id="background-count">0</span></p>
         </footer>
     </main>
     <script>
         const latestCommit = document.querySelector('#latest-commit');
         const markButton = document.querySelector('.mark-button');
         const oliveCount = document.querySelector('#olive-count');
+        const backgroundCount = document.querySelector('#background-count');
         const oliveCooldown = 3000;
-        let clicks = Number.parseInt(localStorage.getItem('ovilli-olive-clicks'), 10) || 0;
+        const backgroundCooldown = oliveCooldown;
+        let clicks = 0;
+        let backgroundClicks = 0;
+        let lastBackgroundNote = 0;
+
+        try {
+            clicks = Number.parseInt(localStorage.getItem('ovilli-olive-clicks'), 10) || 0;
+            backgroundClicks = Number.parseInt(localStorage.getItem('ovilli-background-clicks'), 10) || 0;
+        } catch {
+            // Private browsing and strict privacy settings can disable storage.
+        }
 
         oliveCount.textContent = clicks;
+        backgroundCount.textContent = backgroundClicks;
 
         markButton.addEventListener('click', () => {
             if (markButton.disabled) return;
 
             clicks += 1;
             oliveCount.textContent = clicks;
-            localStorage.setItem('ovilli-olive-clicks', clicks);
+            try {
+                localStorage.setItem('ovilli-olive-clicks', clicks);
+            } catch {
+                // The interaction still works when storage is unavailable.
+            }
             markButton.classList.add('is-noted');
             markButton.classList.add('is-cooling');
             markButton.disabled = true;
@@ -77,25 +100,96 @@
             }, oliveCooldown);
         });
 
-        fetch('https://api.github.com/users/Ovilli/events/public?per_page=100')
+        const commitRequest = new AbortController();
+        const commitTimeout = setTimeout(() => commitRequest.abort(), 6000);
+
+        fetch('https://api.github.com/users/Ovilli/events/public?per_page=100', { signal: commitRequest.signal })
             .then(response => response.ok ? response.json() : Promise.reject())
             .then(events => {
                 const push = events.find(event => event.type === 'PushEvent' && event.payload.head);
                 if (!push) throw new Error('No recent public commits');
 
-                return fetch(`https://api.github.com/repos/${push.repo.name}/commits/${push.payload.head}`)
+                return fetch(`https://api.github.com/repos/${push.repo.name}/commits/${push.payload.head}`, { signal: commitRequest.signal })
                     .then(response => response.ok ? response.json() : Promise.reject())
                     .then(commit => {
                         latestCommit.href = commit.html_url;
-                        latestCommit.textContent = commit.commit.message.split('\n')[0];
+                        const message = commit.commit.message.split('\n')[0];
+                        latestCommit.textContent = message;
+                        latestCommit.title = message;
                     });
             })
             .catch(() => {
                 latestCommit.href = '#built-title';
                 latestCommit.textContent = 'projects';
-            });
+            })
+            .finally(() => clearTimeout(commitTimeout));
 
-        if (matchMedia('(hover: hover) and (pointer: fine)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (!reducedMotion) {
+            let fluidX = 0;
+            let fluidY = 0;
+            let fluidRotation = 0;
+            let targetFluidX = 0;
+            let targetFluidY = 0;
+            let targetFluidRotation = 0;
+
+            const chooseFluidPosition = () => {
+                targetFluidX = (Math.random() - .5) * 8;
+                targetFluidY = (Math.random() - .5) * 6;
+                targetFluidRotation = (Math.random() - .5) * 5;
+                setTimeout(chooseFluidPosition, 7000 + Math.random() * 7000);
+            };
+
+            const driftFluid = () => {
+                fluidX += (targetFluidX - fluidX) * .012;
+                fluidY += (targetFluidY - fluidY) * .012;
+                fluidRotation += (targetFluidRotation - fluidRotation) * .012;
+                document.documentElement.style.setProperty('--fluid-x', `${fluidX}%`);
+                document.documentElement.style.setProperty('--fluid-y', `${fluidY}%`);
+                document.documentElement.style.setProperty('--fluid-rotate', `${fluidRotation}deg`);
+                document.documentElement.style.setProperty('--far-x', `${-1 + fluidX * .25}%`);
+                document.documentElement.style.setProperty('--far-y', `${2 + fluidY * .2}%`);
+                document.documentElement.style.setProperty('--far-r', `${fluidRotation * .25}deg`);
+                document.documentElement.style.setProperty('--mid-x', `${2 + fluidX * .6}%`);
+                document.documentElement.style.setProperty('--mid-y', `${-2 + fluidY * .55}%`);
+                document.documentElement.style.setProperty('--mid-r', `${-3 + fluidRotation * .55}deg`);
+                document.documentElement.style.setProperty('--near-x', `${-2 + fluidX}%`);
+                document.documentElement.style.setProperty('--near-y', `${1 + fluidY * .9}%`);
+                document.documentElement.style.setProperty('--near-r', `${4 + fluidRotation}deg`);
+                requestAnimationFrame(driftFluid);
+            };
+
+            chooseFluidPosition();
+            driftFluid();
+        }
+
+        addEventListener('click', event => {
+            if (event.target.closest('a, button')) return;
+
+            const now = Date.now();
+            if (now - lastBackgroundNote < backgroundCooldown) return;
+            lastBackgroundNote = now;
+
+            backgroundClicks += 1;
+            backgroundCount.textContent = backgroundClicks;
+            try {
+                localStorage.setItem('ovilli-background-clicks', backgroundClicks);
+            } catch {
+                // The counter can remain session-only when storage is unavailable.
+            }
+
+            if (reducedMotion) return;
+
+            const pulse = document.createElement('span');
+            pulse.className = 'background-pulse';
+            pulse.style.setProperty('--pulse-x', `${event.clientX}px`);
+            pulse.style.setProperty('--pulse-y', `${event.clientY}px`);
+            document.body.append(pulse);
+            pulse.addEventListener('animationend', () => pulse.remove(), { once: true });
+        });
+
+        if (matchMedia('(hover: hover) and (pointer: fine)').matches && !reducedMotion) {
             let x = 0;
             let y = 0;
             let targetX = 0;
@@ -104,17 +198,8 @@
             addEventListener('pointermove', event => {
                 targetX = (event.clientX / innerWidth - .5) * 8;
                 targetY = (event.clientY / innerHeight - .5) * 6;
-            });
-
-            addEventListener('pointerdown', event => {
-                if (event.target.closest('.mark-button')?.disabled) return;
-
-                const pulse = document.createElement('span');
-                pulse.className = 'background-pulse';
-                pulse.style.setProperty('--pulse-x', `${event.clientX}px`);
-                pulse.style.setProperty('--pulse-y', `${event.clientY}px`);
-                document.body.append(pulse);
-                pulse.addEventListener('animationend', () => pulse.remove(), { once: true });
+                document.documentElement.style.setProperty('--noise-x', `${event.clientX}px`);
+                document.documentElement.style.setProperty('--noise-y', `${event.clientY}px`);
             });
 
             const followPointer = () => {
@@ -122,6 +207,10 @@
                 y += (targetY - y) * .045;
                 document.documentElement.style.setProperty('--ambient-x', `${x}%`);
                 document.documentElement.style.setProperty('--ambient-y', `${y}%`);
+                document.documentElement.style.setProperty('--fluid-tilt-x', `${x * .18}deg`);
+                document.documentElement.style.setProperty('--fluid-tilt-y', `${y * .18}deg`);
+                document.documentElement.style.setProperty('--light-x', `${50 + x * 2}%`);
+                document.documentElement.style.setProperty('--light-y', `${40 + y * 2}%`);
                 requestAnimationFrame(followPointer);
             };
 
